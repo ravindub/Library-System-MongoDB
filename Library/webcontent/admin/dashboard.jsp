@@ -1,8 +1,8 @@
 <%@page import="java.sql.*" import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
+	/* PreparedStatement ps;
 		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+        ResultSet rs= null; */
         
 %>
 
@@ -12,7 +12,7 @@ if(session.getAttribute("alogin")==null)
 { 
 	response.sendRedirect("../index.jsp");
 }
-else{
+else {
 %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -55,17 +55,17 @@ else{
                       <div class="alert alert-success back-widget-set text-center">
                             <i class="fa fa-book fa-5x"></i>
 <%
-String sql ="SELECT id from tblbooks ";
+/* String sql ="SELECT id from tblbooks ";
 ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
 rs=ps.executeQuery();
 
 
 rs.last();
-int listdbooks=rs.getRow();
+int listdbooks=rs.getRow(); */
 %>
 
 
-                            <h3><%=listdbooks%></h3>
+                            <h3></h3>
                       Books Listed
                         </div>
                     </div>
@@ -75,15 +75,15 @@ int listdbooks=rs.getRow();
                       <div class="alert alert-info back-widget-set text-center">
                             <i class="fa fa-bars fa-5x"></i>
 <% 
-String sql1 ="SELECT id from tblissuedbookdetails ";
+/* String sql1 ="SELECT id from tblissuedbookdetails ";
 ps=conn.prepareStatement(sql1,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
 rs=ps.executeQuery();
 
 rs.last();
-int issuedbooks=rs.getRow();
+int issuedbooks=rs.getRow(); */
 %>
 
-                            <h3><%=issuedbooks%> </h3>
+                            <h3> </h3>
                            Books Issued
                         </div>
                     </div>
@@ -92,17 +92,17 @@ int issuedbooks=rs.getRow();
                       <div class="alert alert-warning back-widget-set text-center">
                             <i class="fa fa-recycle fa-5x"></i>
 <%
-int status=1;
+/* int status=1;
 String sql2 ="SELECT id from tblissuedbookdetails where RetrunStatus=?";
 ps=conn.prepareStatement(sql2,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
 ps.setInt(1,status);
 rs=ps.executeQuery();
 
 rs.last();
-int returnedbooks=rs.getRow();
+int returnedbooks=rs.getRow(); */
 %>
 
-                            <h3><%=returnedbooks%></h3>
+                            <h3></h3>
                           Books Returned
                         </div>
                     </div>
@@ -110,14 +110,14 @@ int returnedbooks=rs.getRow();
                       <div class="alert alert-danger back-widget-set text-center">
                             <i class="fa fa-users fa-5x"></i>
 <% 
-String sql3 ="SELECT id from tblstudents ";
+/* String sql3 ="SELECT id from tblstudents ";
 ps=conn.prepareStatement(sql3,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
 rs=ps.executeQuery();
 
 rs.last();
-int regstds=rs.getRow();
+int regstds=rs.getRow(); */
 %>
-                            <h3><%=regstds%></h3>
+                            <h3></h3>
                            Registered Students
                         </div>
                     </div>
@@ -132,16 +132,16 @@ int regstds=rs.getRow();
                       <div class="alert alert-success back-widget-set text-center">
                             <i class="fa fa-user fa-5x"></i>
 <% 
-String sql4 ="SELECT id from tblauthors ";
+/* String sql4 ="SELECT id from tblauthors ";
 ps=conn.prepareStatement(sql4,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
 rs=ps.executeQuery();
 
 rs.last();
-int listdathrs=rs.getRow();
+int listdathrs=rs.getRow(); */
 %>
 
 
-                            <h3><%=listdathrs%></h3>
+                            <h3></h3>
                       Listed Authors
                         </div>
                     </div>
@@ -151,18 +151,18 @@ int listdathrs=rs.getRow();
                       <div class="alert alert-info back-widget-set text-center">
                             <i class="fa fa-file-archive-o fa-5x"></i>
 <% 
-String sql5 ="SELECT id from tblcategory ";
+/* String sql5 ="SELECT id from tblcategory ";
 ps=conn.prepareStatement(sql5,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
 rs=ps.executeQuery();
 
 rs.last();
 int listdcats=rs.getRow();
 
-ps.close();
+ps.close(); */
 
 %>
 
-                            <h3><%=listdcats%> </h3>
+                            <h3> </h3>
                            Listed Categories
                         </div>
                     </div>

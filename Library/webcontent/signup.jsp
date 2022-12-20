@@ -1,6 +1,9 @@
 <%@page errorPage="error.jsp"%>
 <%@page import="java.io.BufferedReader,java.io.BufferedWriter,java.io.FileReader,java.io.FileWriter"%>
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" 
+		import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+		import="com.library.db.dbConnect"%>
 <%!
 	public static String getDate()
     
@@ -29,8 +32,8 @@
 	}
 %>
 <%
-	PreparedStatement ps;
-	Connection conn = dbConnect.getConnection();
+	MongoDatabase db = dbConnect.getDatabase();
+	
 %>
 <%
 String signup=request.getParameter("signup");
@@ -46,28 +49,20 @@ if(signup!=null)
 		String mobileno=request.getParameter("mobileno");
 		String email=request.getParameter("email"); 
 		String password=request.getParameter("password"); 
-		int status=1;
-		String sql="INSERT INTO  tblstudents(StudentId,FullName,MobileNumber,EmailId,Password,Status,RegDate) VALUES(?,?,?,?,?,?,?)";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,studentId);
-		ps.setString(2,fname);
-		ps.setString(3,mobileno);
-		ps.setString(4,email);
-		ps.setString(5,password);
-		ps.setInt(6,status);
-		ps.setString(7,getDate());
-		int i=ps.executeUpdate();		
+		
+		MongoCollection<Document> collection = db.getCollection("students");
+		
+		Document doc = new Document("studentID",studentId  )
+                .append("fullName", fname)
+                .append("email",email )
+                .append("mobile", mobileno)
+                .append("password",password );
+		
+		collection.insertOne(doc);	
 
-
-		if(i>0)
-		{
-			out.println("<script>alert('Your Registration successfull and your student id is  "+studentId+"')</script>");
-		}
-		else 
-		{
-			out.println("<script>alert('Something went wrong. Please try again');</script>");
-		}
-	ps.close();
+		out.println("<script>alert('Your Registration successfull and your student id is  "+studentId+"')</script>");
+		
+		
 }
 %>
 
@@ -102,21 +97,7 @@ return false;
 return true;
 }
 </script>
-<script>
-function checkAvailability() {
-$("#loaderIcon").show();
-jQuery.ajax({
-url: "check_availability.jsp",
-data:'emailid='+$("#emailid").val(),
-type: "POST",
-success:function(data){
-$("#user-availability-status").html(data);
-$("#loaderIcon").hide();
-},
-error:function (){}
-});
-}
-</script>    
+   
 
 </head>
 <body>
@@ -154,7 +135,7 @@ error:function (){}
                                         
 <div class="form-group">
 <label>Enter Email</label>
-<input class="form-control" type="email" name="email" id="emailid" onBlur="checkAvailability()"  autocomplete="off" required  />
+<input class="form-control" type="email" name="email" id="emailid"  autocomplete="off" required  />
    <span id="user-availability-status" style="font-size:12px;"></span> 
 </div>
 

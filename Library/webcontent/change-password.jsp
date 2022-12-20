@@ -1,9 +1,11 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+		import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+		import= "static com.mongodb.client.model.Updates.*"
+ 		import="com.library.db.dbConnect"%>
 
 <%
-	PreparedStatement ps;
-        ResultSet rs= null;
-        Connection conn = dbConnect.getConnection();
+	MongoDatabase db = dbConnect.getDatabase();
 	String msg=null;
 	String error=null;
 %>
@@ -22,31 +24,17 @@ else
   	{
 		String password=request.getParameter("password");
 		String newpassword=request.getParameter("newpassword");
-		String sql ="SELECT Password FROM tblstudents WHERE EmailId=? and Password=?";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,email);
-		ps.setString(2,password);
-
-		rs=ps.executeQuery();
-
-		if(rs.next())
-		{
-			String sql1="update tblstudents set Password=? where EmailId=?";
-			ps=conn.prepareStatement(sql1);
-			ps.setString(1,newpassword);
-			ps.setString(2,email);
-			ps.executeUpdate();
-
-			msg="Your Password succesfully changed";
-			error=null;
-		}
-		else 
-		{
-			error="Your current password is wrong";  
-			msg=null;
-		}
 		
-		ps.close();
+		MongoCollection<Document> collection = db.getCollection("students");
+		Document myDoc = collection.find(eq("email", email)).first();
+		
+		collection.updateOne(
+                eq("email",email),
+                combine(set("password", newpassword)));
+
+		msg="Your Password succesfully changed";
+		error=null;
+		
 	}
 
 %>

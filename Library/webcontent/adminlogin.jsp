@@ -1,9 +1,10 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+
+		 import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-       
-        ResultSet rs= null;
-        Connection conn = dbConnect.getConnection();
+	
+		MongoDatabase db = dbConnect.getDatabase();
 %>
 
 <%
@@ -18,15 +19,13 @@ if(login!=null)
 
 		String username=request.getParameter("username");
 		String password=request.getParameter("password");
+		
+		MongoCollection<Document> collection = db.getCollection("admin");
+		
+		Document myDoc = collection.find(and(eq("username", username), eq("password", password))).first();
+		
 
-		String sql ="SELECT UserName,Password FROM admin WHERE UserName=? and Password=?";
-		ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-		ps.setString(1,username);
-		ps.setString(2,password);
-	
-		rs=ps.executeQuery();
-
-		if(rs.next())
+		if(myDoc != null)
 		{
 			session.setAttribute("alogin",username);
 
@@ -36,7 +35,7 @@ if(login!=null)
 		{
 			out.println("<script>alert('Invalid Details');</script>");
 		}
-	rs.close();
+	
 }
 %>
 <!DOCTYPE html>

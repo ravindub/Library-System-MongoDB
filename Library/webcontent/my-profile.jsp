@@ -1,4 +1,8 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" 
+		import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+		import= "static com.mongodb.client.model.Updates.*"
+		import="com.library.db.dbConnect"%>
 <%@page errorPage="error.jsp"%>
 <%!
 	public static String getDate()
@@ -15,9 +19,7 @@
 %>
 
 <%
-	PreparedStatement ps;
-        ResultSet rs= null;
-        Connection conn = dbConnect.getConnection();
+		MongoDatabase db = dbConnect.getDatabase();
 %>
 
 <%
@@ -28,24 +30,25 @@ if(email==null)
 }
 else
 { 
+	String sid=(String)session.getAttribute("stdid");
 	String updateValue=request.getParameter("update");
+	
+	MongoCollection<Document> collection = db.getCollection("students");
+	Document myDoc = collection.find(eq("studentID", sid)).first();
+	
 	if(updateValue!=null && updateValue.equals("update"))
 	{    
-		String sid=(String)session.getAttribute("stdid");
+		
 		String fname=request.getParameter("fullanme");
 		String mobileno=request.getParameter("mobileno");
 
-		String sql="update tblstudents set FullName=?,MobileNumber=?,UpdationDate=? where StudentId=?";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,fname);
-		ps.setString(2,mobileno);
-		ps.setString(3,getDate());
-		ps.setString(4,sid);
-		ps.executeUpdate();
+		collection.updateOne(
+                eq("studentID",sid),
+                combine(set("fullName", fname), set("mobile", mobileno)));
 		
-		ps.close();
 
-		out.println("<script>alert('Your profile has been updated')</script>");
+			out.println("<script>alert('Your profile has been updated')</script>");
+			out.println("<script type='text/javascript'> document.location ='my-profile.jsp'; </script>");
 	}	
 
 %>
@@ -93,58 +96,31 @@ else
                         </div>
                         <div class="panel-body">
                             <form name="signup" method="post">
-<%
-String sid=(String)session.getAttribute("stdid");
-String sql="SELECT StudentId,FullName,EmailId,MobileNumber,RegDate,UpdationDate,Status from  tblstudents  where StudentId=? ";
-ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-ps.setString(1,sid);
-rs=ps.executeQuery();
-
-
-if(rs.next())
-{
-
-%>  
 
 	<div class="form-group">
 	<label>Student ID : </label>
-	<%=sid%>
+	<%=(String) myDoc.get("studentID")%>
 	</div>
-
-	<div class="form-group">
-	<label>Reg Date : </label>
-	<%=rs.getString("RegDate")%>
-	</div>
-	<% if(rs.getString("UpdationDate")!=null){%>
-	<div class="form-group">
-	<label>Last Updation Date : </label>
-	<%=rs.getString("UpdationDate")%>
-	</div>
-	<%}%>
-
 
 
 
 	<div class="form-group">
 	<label>Enter Full Name</label>
-	<input class="form-control" type="text" name="fullanme" value="<%=rs.getString("FullName")%>" autocomplete="off" required />
+	<input class="form-control" type="text" name="fullanme" value="<%=(String) myDoc.get("fullName")%>" autocomplete="off" required />
 	</div>
 
 
 	<div class="form-group">
 	<label>Mobile Number :</label>
-	<input class="form-control" type="text" name="mobileno" maxlength="10" value="<%=rs.getString("MobileNumber")%>" autocomplete="off" required />
+	<input class="form-control" type="text" name="mobileno" maxlength="10" value="<%=(String) myDoc.get("mobile")%>" autocomplete="off" required />
 	</div>
                                         
 	<div class="form-group">
 	<label>Enter Email</label>
-	<input class="form-control" type="email" name="email" id="emailid" value="<%=rs.getString("EmailId")%>"  autocomplete="off" required readonly />
+	<input class="form-control" type="email" name="email" id="emailid" value="<%=(String) myDoc.get("email")%>"  autocomplete="off" required readonly />
 	</div>
 
-<%
-}
-%>
-                              
+                         
 <button type="submit" name="update" value="update" class="btn btn-primary" id="submit">Update Now </button>
 
                                     </form>

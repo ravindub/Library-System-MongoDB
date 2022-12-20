@@ -1,8 +1,7 @@
 <%@page import="java.sql.*" import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-    ResultSet rs= null;
-    Connection conn = dbConnect.getConnection();
+	
+   // Connection conn = dbConnect.getConnection();
 %>
 <%
 
@@ -53,7 +52,7 @@ else{
                  <div class="col-md-3 col-sm-3 col-xs-6">
                       <div class="alert alert-info back-widget-set text-center">
                             <i class="fa fa-bars fa-5x"></i>
-<%
+<%/*
 String sid=(String)session.getAttribute("stdid");
 String sql1 ="SELECT id from tblissuedbookdetails where StudentID=?";
 ps=conn.prepareStatement(sql1,ResultSet.TYPE_SCROLL_SENSITIVE,  
@@ -64,10 +63,10 @@ rs=ps.executeQuery();
 rs.last();
 int issuedbooks=rs.getRow();
 
-ps.close();
+ps.close(); */
 %>
 
-                            <h3> <%=issuedbooks%></h3>
+                            <h3> <%//=issuedbooks%></h3>
                             Books Borrowed
                         </div>
                     </div>

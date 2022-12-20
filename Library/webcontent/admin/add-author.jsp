@@ -1,4 +1,8 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" 
+		import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+		import= "static com.mongodb.client.model.Updates.*"
+		import="com.library.db.dbConnect"%>
 <%!
 	public static String getDate()
     
@@ -14,9 +18,7 @@
 %>
 
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+		MongoDatabase db = dbConnect.getDatabase();	
        
 %>
 
@@ -32,25 +34,17 @@ else
 if(create!=null)
 {
 	String author=request.getParameter("author");
-	String sql="INSERT INTO  tblauthors(AuthorName,CreationDate) VALUES(?,?)";
-	ps=conn.prepareStatement(sql);
-	ps.setString(1,author);
-	ps.setString(2,getDate());
-	int i=ps.executeUpdate();
-
-
-	if(i>0)
-	{
-		session.setAttribute("msg","Author Listed successfully");
-		response.sendRedirect("manage-authors.jsp");
-	}
-	else 
-	{
-		session.setAttribute("error","Something went wrong. Please try again");
-		response.sendRedirect("manage-authors.jsp");
-	}
-
-	ps.close();
+	
+	MongoCollection<Document> collection = db.getCollection("authors");
+	
+	Document doc = new Document("author",author).
+			append("Creationdate",getDate());
+	
+	collection.insertOne(doc);
+	
+	session.setAttribute("msg","Author Listed successfully");
+	response.sendRedirect("manage-authors.jsp");
+	
 }
 
 

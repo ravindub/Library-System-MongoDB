@@ -21,11 +21,14 @@ if(login!=null)
 		MongoCollection<Document> collection = db.getCollection("students");
 		
 		Document myDoc = collection.find(and(eq("email", email), eq("password", password))).first();
-	    //System.out.println(myDoc);
+	    
 			
 	    if(myDoc != null)
 			{
-				session.setAttribute("login",email);
+	    	
+	    		String stdid = (String) myDoc.get("studentID");
+	    		session.setAttribute("stdid",stdid);
+	    		session.setAttribute("login",email);
 				out.println("<script type='text/javascript'> document.location ='dashboard.jsp'; </script>");
 			} 
 			
