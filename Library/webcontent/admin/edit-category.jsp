@@ -1,4 +1,9 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" 
+		import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+		import= "static com.mongodb.client.model.Updates.*"
+		import= "org.bson.types.ObjectId"
+		import="com.library.db.dbConnect"%>
 <%!
 	public static String getDate()
     
@@ -14,9 +19,7 @@
 %>
 
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();
        
 %>
 
@@ -27,22 +30,22 @@ if(session.getAttribute("alogin")==null)
 	response.sendRedirect("../index.jsp");
 }
 else
-{ 
+{ 	
+	String catid=request.getParameter("catid");
 	String update=request.getParameter("update");
+	
+	MongoCollection<Document> collection = db.getCollection("categories");
+	Document myDoc = collection.find(eq("_id", new ObjectId(catid))).first();
+	
 	if(update!=null)
 	{
 		String category=request.getParameter("category");
+		String updateDate = getDate();
 		
-		String catid=request.getParameter("catid");
-
-		String sql="update  tblcategory set CategoryName=?,Status=?,UpdationDate=? where id=?";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,category);
-		ps.setInt(2,1);
-		ps.setString(3,getDate());
-		ps.setInt(4,Integer.parseInt(catid));
-		int i=ps.executeUpdate();
-
+		collection.updateOne(
+                eq("_id", new ObjectId(catid)),
+                combine(set("category", category), set("UpdationDate", updateDate)));
+		
 		session.setAttribute("updatemsg","Category updated successfully");
 		response.sendRedirect("manage-categories.jsp");
 }
@@ -88,24 +91,13 @@ Category Info
  
 <div class="panel-body">
 <form role="form" method="post">
-<%
-	String catid=request.getParameter("catid"); 
-
-	String sql="SELECT * from tblcategory where id=?";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	ps.setInt(1,Integer.parseInt(catid));
-	rs=ps.executeQuery();
-
-	while(rs.next())
-	{
-       
-%> 
+ 
 <div class="form-group">
 <label>Category Name</label>
-<input class="form-control" type="text" name="category" value="<%=rs.getString("CategoryName")%>" required />
+<input class="form-control" type="text" name="category" value="<%=(String) myDoc.get("category")%>" required />
 </div>
 
-<% } ps.close(); %>
+
 <button type="submit" name="update" class="btn btn-info">Update </button>
 
                                     </form>

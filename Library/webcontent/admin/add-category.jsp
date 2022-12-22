@@ -1,4 +1,8 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import="com.library.db.dbConnect"%>
 <%!
 	public static String getDate()
     
@@ -13,9 +17,7 @@
 	}
 %>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();	
        
 %>
 
@@ -31,27 +33,19 @@ else
 	if(create!=null)
 	{
 		String category=request.getParameter("category");
-		String status=request.getParameter("status");
-		String sql="INSERT INTO  tblcategory(CategoryName,Status,CreationDate) VALUES(?,?,?)";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,category);
-		ps.setInt(2,1);
-		ps.setString(3,getDate());
-		int i=ps.executeUpdate();
-	
-	
-		if(i==0)
-		{
-			session.setAttribute("error","Something went wrong. Please try again");
-			response.sendRedirect("manage-categories.jsp");
-		}
-		else 
-		{
-			session.setAttribute("msg","Category Listed successfully");
-			response.sendRedirect("manage-categories.jsp");
-		}
 		
-		ps.close();
+		MongoCollection<Document> collection = db.getCollection("categories");
+		
+		Document doc = new Document("category",category).
+				append("Creationdate",getDate());
+		
+		collection.insertOne(doc);
+	
+	
+		
+		session.setAttribute("msg","Category Listed successfully");
+		response.sendRedirect("manage-categories.jsp");
+		
 	}
 %>
 <!DOCTYPE html>

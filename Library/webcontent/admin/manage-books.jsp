@@ -1,8 +1,11 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+	import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();
         
 %>
 
@@ -15,14 +18,15 @@ if(session.getAttribute("alogin")==null)
 }
 else
 { 
+	MongoCollection<Document> collection = db.getCollection("books");
+	
 	String id=request.getParameter("del");
 	if(id!=null)
 	{
-		String sql = "delete from tblbooks  WHERE id=?";
-		ps=conn.prepareStatement(sql);		
-		ps.setInt(1,Integer.parseInt(id));
-		ps.executeUpdate();
-		session.setAttribute("delmsg","Category deleted scuccessfully ");
+		
+		collection.deleteOne(eq("_id", new ObjectId(id)));
+		
+		session.setAttribute("delmsg","Book deleted scuccessfully ");
 		response.sendRedirect("manage-books.jsp");
 }
 %>
@@ -127,30 +131,32 @@ else
                                         </tr>
                                     </thead>
                                     <tbody>
-<% String sql = "SELECT tblbooks.BookName,tblcategory.CategoryName,tblauthors.AuthorName,tblbooks.ISBNNumber,tblbooks.BookPrice,tblbooks.id as bookid from  tblbooks join tblcategory on tblcategory.id=tblbooks.CatId join tblauthors on tblauthors.id=tblbooks.AuthorId";
-ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-rs=ps.executeQuery();
+<% 
 
-int cnt=1;
-while(rs.next())
+	MongoCursor<Document> cursor = collection.find().iterator();
+
+
+	int cnt=1;
+while(cursor.hasNext())
 {
+	Document myDoc = cursor.next();
 %>                                      
                                         <tr class="odd gradeX">
                                             <td class="center"><%=cnt%></td>
-                                            <td class="center"><%=rs.getString("BookName")%></td>
-                                            <td class="center"><%=rs.getString("CategoryName")%></td>
-                                            <td class="center"><%=rs.getString("AuthorName")%></td>
-                                            <td class="center"><%=rs.getString("ISBNNumber")%></td>
-                                            <td class="center"><%=rs.getString("BookPrice")%></td>
+                                            <td class="center"><%=myDoc.get("bookname")%></td>
+                                            <td class="center"><%=myDoc.get("category")%></td>
+                                            <td class="center"><%=myDoc.get("author")%></td>
+                                            <td class="center"><%=myDoc.get("isbn")%></td>
+                                            <td class="center"><%=myDoc.get("price")%></td>
                                             <td class="center">
 
-                                            <a href="edit-book.jsp?bookid=<%=rs.getString("bookid")%>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button> </a>
-                                          <a href="manage-books.jsp?del=<%=rs.getString("bookid")%>" onclick="return confirm('Are you sure you want to delete?');" >  <button class="btn btn-danger"><i class="fa fa-pencil"></i> Delete</button></a>
+                                            <a href="edit-book.jsp?bookid=<%=myDoc.get("_id")%>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button> </a>
+                                          <a href="manage-books.jsp?del=<%=myDoc.get("_id")%>" onclick="return confirm('Are you sure you want to delete?');" >  <button class="btn btn-danger"><i class="fa fa-pencil"></i> Delete</button></a>
                                             </td>
                                         </tr>
  <% cnt=cnt+1;
 } 
-ps.close();
+cursor.close();
 %>                                      
                                     </tbody>
                                 </table>

@@ -1,10 +1,11 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+		import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+		import= "static com.mongodb.client.model.Updates.*"
+		 import="com.library.db.dbConnect"%>
 
 <%
-	PreparedStatement ps;
-	Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
-        
+	MongoDatabase db = dbConnect.getDatabase();
 	String msg=null;
 	String error=null;
 %>
@@ -23,28 +24,19 @@ else
 		String password=request.getParameter("password");
 		String newpassword=request.getParameter("newpassword");
 		String username=(String)session.getAttribute("alogin");
-		String sql ="SELECT Password FROM admin where UserName=? and Password=?";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,username);
-		ps.setString(2,password);
-		rs=ps.executeQuery();
+		
+		MongoCollection<Document> collection = db.getCollection("admin");
+		Document myDoc = collection.find(eq("username", username)).first();
+		
+		collection.updateOne(
+                eq("username",username),
+                combine(set("password", newpassword)));
 
-		if(rs.next())
-		{
-			String sql1="update admin set Password=? where UserName=?";
-			ps=conn.prepareStatement(sql1);
-			ps.setString(1,newpassword);
-			ps.setString(2,username);
-			ps.executeUpdate();
-
+		
 			msg="Your Password succesfully changed";
 			error=null;
-		}	
-		else
-		{
-			error="Your current password is wrong";  
-			msg=null;
-		}
+			
+		
 }
 
 %>

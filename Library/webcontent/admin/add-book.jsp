@@ -1,8 +1,10 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();	
        
 %>
 
@@ -22,29 +24,20 @@ if(add!=null)
 	String author=request.getParameter("author");
 	String isbn=request.getParameter("isbn");
 	String price=request.getParameter("price");
-	String sql="INSERT INTO  tblbooks(BookName,CatId,AuthorId,ISBNNumber,BookPrice) VALUES(?,?,?,?,?)";
-	ps=conn.prepareStatement(sql);
-	ps.setString(1,bookname);
-	ps.setInt(2,Integer.parseInt(category));
-	ps.setInt(3,Integer.parseInt(author));
-	ps.setInt(4,Integer.parseInt(isbn));
-	ps.setInt(5,Integer.parseInt(price));
-	int i=ps.executeUpdate();
-
-
-	if(i>0)
-	{
-		session.setAttribute("msg","Book Listed successfully");
-		response.sendRedirect("manage-books.jsp");	
-	}
-	else 
-	{	
-		session.setAttribute("error","Something went wrong. Please try again");
-		response.sendRedirect("manage-books.jsp");
-	}
 	
-
-	ps.close();
+	MongoCollection<Document> collection = db.getCollection("books");
+	
+	Document doc = new Document("bookname",bookname  )
+            .append("category", category)
+            .append("author",author )
+            .append("isbn", isbn)
+            .append("price",price);
+	
+	collection.insertOne(doc);
+	
+	session.setAttribute("msg","Book Listed successfully");
+	response.sendRedirect("manage-books.jsp");	
+	
 }
 %>
 <!DOCTYPE html>
@@ -97,20 +90,19 @@ Book Info
 <select class="form-control" name="category" required="required">
 <option value=""> Select Category</option>
 <% 
-int status=1;
-String sql = "SELECT * from  tblcategory where Status=?";
-ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-ps.setInt(1,status);
-rs=ps.executeQuery();
+
+MongoCollection<Document> collectionCat = db.getCollection("categories");
+MongoCursor<Document> cursor = collectionCat.find().iterator();
 
 int cnt=1;
-while(rs.next())
-{
 
+while(cursor.hasNext())
+{
+	Document myDoc = cursor.next();
 %>  
-<option value="<%=rs.getInt("id")%>"><%=rs.getString("CategoryName")%></option>
+<option value="<%=myDoc.get("category")%>"><%=myDoc.get("category")%></option>
 <% 
-} 
+} cursor.close();
 %> 
 </select>
 </div>
@@ -122,18 +114,17 @@ while(rs.next())
 <option value=""> Select Author</option>
 <% 
 
-sql = "SELECT * from  tblauthors ";
-ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-
-rs=ps.executeQuery();
+MongoCollection<Document> collectionAut = db.getCollection("authors");
+MongoCursor<Document> cursor2 = collectionAut.find().iterator();
 
 cnt=1;
-while(rs.next())
+while(cursor2.hasNext())
 {
+	Document myDoc2 = cursor2.next();
 %>  
-<option value="<%=rs.getInt("id")%>"><%=rs.getString("AuthorName")%></option>
+<option value="<%=myDoc2.get("author")%>"><%=myDoc2.get("author")%></option>
  <%
- } 
+ } cursor2.close();
 
 %> 
 </select>

@@ -1,8 +1,11 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+ import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();
         
 %>
 <%
@@ -13,14 +16,13 @@ if(session.getAttribute("alogin")==null)
 }
 else
 { 
+	MongoCollection<Document> collection = db.getCollection("categories");
+	
 	String id=request.getParameter("del");
 if(id!=null)
 {
 
-	String sql = "delete from tblcategory  WHERE id=?";
-	ps=conn.prepareStatement(sql);
-	ps.setInt(1,Integer.parseInt(id));
-	ps.executeUpdate();
+	collection.deleteOne(eq("_id", new ObjectId(id)));
 
 	session.setAttribute("delmsg","Category deleted scuccessfully");
 	response.sendRedirect("manage-categories.jsp");
@@ -135,27 +137,28 @@ if(delmsg!=null)
                                     </thead>
                                     <tbody>
 <%
-	String sql = "SELECT * from  tblcategory";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	rs=ps.executeQuery();
+	MongoCursor<Document> cursor = collection.find().iterator();
 
 	int cnt=1;
-while(rs.next())
+	
+while(cursor.hasNext())
 {
+	Document myDoc = cursor.next();
+	
             %>                                      
                                         <tr class="odd gradeX">
                                             <td class="center"><%=cnt%></td>
-                                            <td class="center"><%=rs.getString("CategoryName")%></td>
-                                            <td class="center"><%=rs.getString("CreationDate")%></td>
-                                            <td class="center"><%=rs.getString("UpdationDate")%></td>
+                                            <td class="center"><%=myDoc.get("category")%></td>
+                                            <td class="center"><%=myDoc.get("Creationdate")%></td>
+                                            <td class="center"><%=myDoc.get("UpdationDate")%></td>
                                             <td class="center">
 
-                                            <a href="edit-category.jsp?catid=<%=rs.getInt("id")%>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button> </a>
-                                          <a href="manage-categories.jsp?del=<%=rs.getInt("id")%>" onclick="return confirm('Are you sure you want to delete?');" >  <button class="btn btn-danger"><i class="fa fa-pencil"></i> Delete</button></a>
+                                            <a href="edit-category.jsp?catid=<%=myDoc.get("_id")%>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button> </a>
+                                          <a href="manage-categories.jsp?del=<%=myDoc.get("_id")%>" onclick="return confirm('Are you sure you want to delete?');" >  <button class="btn btn-danger"><i class="fa fa-pencil"></i> Delete</button></a>
                                             </td>
                                         </tr>
  <% cnt=cnt+1;} 
-	ps.close();
+	cursor.close();
  %>                                      
                                     </tbody>
                                 </table>

@@ -2,6 +2,7 @@
 import="com.mongodb.client.*,org.bson.Document" 
 import= "static com.mongodb.client.model.Filters.*"
 import= "static com.mongodb.client.model.Updates.*"
+import= "org.bson.types.ObjectId"
 import="com.library.db.dbConnect"%>
 <%
 	MongoDatabase db = dbConnect.getDatabase();
@@ -20,10 +21,8 @@ else
 	String id=request.getParameter("del");
 	if(id!=null)
 	{
-		String sql = "delete from tblauthors  WHERE id=?";
-		//ps=conn.prepareStatement(sql);
-		//ps.setInt(1,Integer.parseInt(id));
-		//ps.executeUpdate();
+		
+		collection.deleteOne(eq("_id", new ObjectId(id)));
 
 		session.setAttribute("delmsg","Author deleted scuccessfully");
 		response.sendRedirect("manage-authors.jsp");

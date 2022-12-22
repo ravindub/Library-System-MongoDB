@@ -1,4 +1,9 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" 
+		import="com.mongodb.client.*,org.bson.Document" 
+		import= "static com.mongodb.client.model.Filters.*"
+		import= "static com.mongodb.client.model.Updates.*"
+		import= "org.bson.types.ObjectId"
+		import="com.library.db.dbConnect"%>
 <%!
 	public static String getDate()
     
@@ -13,12 +18,7 @@
 	}
 %>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
-        ResultSet rs1= null;
-        ResultSet rs2= null;
-        
+	MongoDatabase db = dbConnect.getDatabase();
 %>
 
 <%
@@ -29,7 +29,12 @@ if(session.getAttribute("alogin")==null)
 }
 else
 { 
+	String bookid=request.getParameter("bookid");
 	String update=request.getParameter("update");
+	
+	MongoCollection<Document> collection = db.getCollection("books");
+	Document myDoc = collection.find(eq("_id", new ObjectId(bookid))).first();
+	
 	if(update!=null)
 	{
 		String bookname=request.getParameter("bookname");		
@@ -37,22 +42,21 @@ else
 		String author=request.getParameter("author");
 		String isbn=request.getParameter("isbn");
 		String price=request.getParameter("price");
-		String bookid=request.getParameter("bookid");
-		String sql="update  tblbooks set BookName=?,CatId=?,AuthorId=?,ISBNNumber=?,BookPrice=?,UpdationDate=? where id=?";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,bookname);
-		ps.setInt(2,Integer.parseInt(category));
-		ps.setInt(3,Integer.parseInt(author));
-		ps.setInt(4,Integer.parseInt(isbn));
-		ps.setInt(5,Integer.parseInt(price));
-		ps.setString(6,getDate());
-		ps.setInt(7,Integer.parseInt(bookid));
-		int i=ps.executeUpdate();
-
+		String updateDate = getDate();
+		
+		collection.updateOne(
+                eq("_id", new ObjectId(bookid)),
+                combine(set("bookname", bookname), 
+                		set("category", category), 
+                		set("author", author), 
+                		set("isbn", isbn), 
+                		set("price", price),
+                		set("UpdationDate", updateDate) ));
+		
 		session.setAttribute("msg","Book Info updated successfully");
 		response.sendRedirect("manage-books.jsp");	
 		
-		ps.close();
+		
 }
 %>
 <!DOCTYPE html>
@@ -95,48 +99,34 @@ Book Info
 </div>
 <div class="panel-body">
 <form role="form" method="post">
-<% 
-	int bookid=Integer.parseInt(request.getParameter("bookid"));
-	String sql = "SELECT tblbooks.BookName,tblcategory.CategoryName,tblcategory.id as cid,tblauthors.AuthorName,tblauthors.id as athrid,tblbooks.ISBNNumber,tblbooks.BookPrice,tblbooks.id as bookid from  tblbooks join tblcategory on tblcategory.id=tblbooks.CatId join tblauthors on tblauthors.id=tblbooks.AuthorId where tblbooks.id=?";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	ps.setInt(1,bookid);
-	rs=ps.executeQuery();
-
-	int cnt=1;
-	while(rs.next())
-	{
-
-%>  
 
 <div class="form-group">
 <label>Book Name<span style="color:red;">*</span></label>
-<input class="form-control" type="text" name="bookname" value="<%=rs.getString("BookName")%>" required />
+<input class="form-control" type="text" name="bookname" value="<%=(String) myDoc.get("bookname")%>" required />
 </div>
 
 <div class="form-group">
 <label> Category<span style="color:red;">*</span></label>
 <select class="form-control" name="category" required="required">
-<option value="<%=rs.getString("cid")%>"> <% String catname=rs.getString("CategoryName"); out.println(catname); %></option>
+<option value="<%=(String) myDoc.get("category")%>"> <%= (String) myDoc.get("category") %></option>
 <% 
-int status=1;
-String sql1 = "SELECT * from  tblcategory where Status=?";
-ps=conn.prepareStatement(sql1,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-ps.setInt(1,status);
-	rs1=ps.executeQuery();
+MongoCollection<Document> collectionCat = db.getCollection("categories");
+MongoCursor<Document> cursor = collectionCat.find().iterator();
 
-	while(rs1.next())
+String selecCat = (String) myDoc.get("category");
+
+	while(cursor.hasNext())
 	{
-
-         
-		if(catname.equalsIgnoreCase(rs1.getString("CategoryName")))
-		{
+		Document myDoc1 = cursor.next();
+        String ct = (String) myDoc1.get("category");
+        
+		if(selecCat.equalsIgnoreCase(ct)){
 			continue;
-		}	
-		else
-		{
+		}
+		else{
   %>  
-<option value="<%=rs1.getString("id")%>"><%=rs1.getString("CategoryName")%></option>
- <% }} %> 
+<option value="<%=ct%>"><%=ct%></option>
+ <% }} cursor.close(); %> 
 </select>
 </div>
 
@@ -144,40 +134,37 @@ ps.setInt(1,status);
 <div class="form-group">
 <label> Author<span style="color:red;">*</span></label>
 <select class="form-control" name="author" required="required">
-<option value="<%=rs.getString("athrid")%>"> <% String athrname=rs.getString("AuthorName"); out.println(athrname); %></option>
+<option value="<%=(String) myDoc.get("author")%>"> <%=(String) myDoc.get("author")%></option>
 <% 
 
-String sql2 = "SELECT * from  tblauthors ";
-ps=conn.prepareStatement(sql2,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-rs2=ps.executeQuery();
+MongoCollection<Document> collectionAut = db.getCollection("authors");
+MongoCursor<Document> cursor2 = collectionAut.find().iterator();
+String selectAut = (String) myDoc.get("author");
 
-while(rs2.next())
+while(cursor2.hasNext())
 {
-
-	if(athrname.equalsIgnoreCase(rs2.getString("AuthorName")))
-	{
+	Document myDoc2 = cursor2.next();
+	String aut = (String) myDoc2.get("author");
+	if(selectAut.equalsIgnoreCase(aut)){
 		continue;
-	} 
-	else
-	{
-
+	}else{
     %>  
-<option value="<%=rs2.getString("id")%>"><%=rs2.getString("AuthorName")%></option>
- <% }} %> 
+<option value="<%=aut%>"><%=aut%></option>
+ <% }} cursor2.close(); %> 
 </select>
 </div>
 
 <div class="form-group">
 <label>ISBN Number<span style="color:red;">*</span></label>
-<input class="form-control" type="number" name="isbn" value="<%=rs.getString("ISBNNumber")%>"  required="required" />
+<input class="form-control" type="number" name="isbn" value="<%=(String) myDoc.get("isbn")%>"  required="required" />
 <p class="help-block">An ISBN is an International Standard Book Number.ISBN Must be unique</p>
 </div>
 
  <div class="form-group">
  <label>Price in LKR<span style="color:red;">*</span></label>
- <input class="form-control" type="text" name="price" value="<%=rs.getString("BookPrice")%>"   required="required" />
+ <input class="form-control" type="text" name="price" value="<%=(String) myDoc.get("price")%>"   required="required" />
  </div>
- <% } %>
+ 
 <button type="submit" name="update" class="btn btn-info">Update </button>
 
                                     </form>

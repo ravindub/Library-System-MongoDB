@@ -1,4 +1,9 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date" 
+import="com.mongodb.client.*,org.bson.Document" 
+import= "static com.mongodb.client.model.Filters.*"
+import= "static com.mongodb.client.model.Updates.*"
+import= "org.bson.types.ObjectId"
+import="com.library.db.dbConnect"%>
 <%!
 	public static String getDate()
     
@@ -13,10 +18,7 @@
 	}
 %>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
-       
+	MongoDatabase db = dbConnect.getDatabase();
 %>
 
 <%
@@ -26,18 +28,23 @@ if(session.getAttribute("alogin")==null)
 }
 else
 { 
+	String athrid=request.getParameter("athrid");
 	String update=request.getParameter("update");
+	
+	
+	MongoCollection<Document> collection = db.getCollection("authors");
+	Document myDoc = collection.find(eq("_id", new ObjectId(athrid))).first();
+	
+
 	if(update!=null)
 	{
-		String athrid=request.getParameter("athrid");
+		String updateDate = getDate();
+		
 		String author=request.getParameter("author");
-
-		String sql="update  tblauthors set AuthorName=?,UpdationDate=? where id=?";
-		ps=conn.prepareStatement(sql);
-		ps.setString(1,author);
-		ps.setString(2,getDate());
-		ps.setInt(3,Integer.parseInt(athrid));
-		int i=ps.executeUpdate();
+		
+		collection.updateOne(
+                eq("_id", new ObjectId(athrid)),
+                combine(set("author", author), set("UpdationDate", updateDate)));
 
 		session.setAttribute("updatemsg","Author info updated successfully");
 		response.sendRedirect("manage-authors.jsp");
@@ -85,22 +92,11 @@ Author Info
 <form role="form" method="post">
 <div class="form-group">
 <label>Author Name</label>
-<% 
-String athrid=request.getParameter("athrid");
-String sql = "SELECT * from  tblauthors where id=?";
-ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	ps.setInt(1,Integer.parseInt(athrid));
-	rs=ps.executeQuery();
+   
+<input class="form-control" type="text" name="author" value="<%=(String) myDoc.get("author")%>" required />
 
-int cnt=1;
-while(rs.next())
-{
-       %>   
-<input class="form-control" type="text" name="author" value="<%=rs.getString("AuthorName")%>" required />
-<% }
-ps.close();
 
-%>
+
 </div>
 
 <button type="submit" name="update" class="btn btn-info">Update </button>
