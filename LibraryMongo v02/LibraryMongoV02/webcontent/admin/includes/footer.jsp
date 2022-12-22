@@ -2,7 +2,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                   &copy;ABC Library
+                   &copy;Vision Library
                 </div>
 
             </div>

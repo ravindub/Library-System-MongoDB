@@ -28,7 +28,7 @@ else {
     <!--[if IE]>
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <![endif]-->
-    <title>ABC Library | Admin Dash Board</title>
+    <title>Vision Library | Admin Dash Board</title>
     <!-- BOOTSTRAP CORE STYLE  -->
     <link href="assets/css/bootstrap.css" rel="stylesheet" />
     <!-- FONT AWESOME STYLE  -->
@@ -57,7 +57,7 @@ else {
 
  <div class="col-md-3 col-sm-3 col-xs-6">
                       <div class="alert alert-success back-widget-set text-center">
-                            <i class="fa fa-book fa-5x"></i>
+                            <i class=""></i>
 <%
 
 	MongoCollection<Document> collection = db.getCollection("books");
@@ -74,7 +74,7 @@ else {
             
                  <div class="col-md-3 col-sm-3 col-xs-6">
                       <div class="alert alert-info back-widget-set text-center">
-                            <i class="fa fa-bars fa-5x"></i>
+                            <i class=""></i>
 <% 
 MongoCollection<Document> collection2 = db.getCollection("issuedbooks");
 
@@ -88,7 +88,7 @@ long Count2 = collection2.countDocuments();
              
                <div class="col-md-3 col-sm-3 col-xs-6">
                       <div class="alert alert-warning back-widget-set text-center">
-                            <i class="fa fa-recycle fa-5x"></i>
+                            <i class=""></i>
 <%
 
 MongoCollection<Document> collection3 = db.getCollection("issuedbooks");
@@ -102,7 +102,7 @@ long Count3 = collection3.countDocuments(eq("returnedDate", null));
                     </div>
                <div class="col-md-3 col-sm-3 col-xs-6">
                       <div class="alert alert-danger back-widget-set text-center">
-                            <i class="fa fa-users fa-5x"></i>
+                            <i class=""></i>
 <% 
 MongoCollection<Document> collection4 = db.getCollection("students");
 
@@ -117,42 +117,7 @@ long Count4 = collection4.countDocuments();
 
 
 
- <div class="row">
-
- <div class="col-md-3 col-sm-3 col-xs-6">
-                      <div class="alert alert-success back-widget-set text-center">
-                            <i class="fa fa-user fa-5x"></i>
-<% 
-MongoCollection<Document> collection5 = db.getCollection("authors");
-
-long Count5 = collection5.countDocuments();
-%>
-
-
-                            <h3><%=Count5%></h3>
-                      Listed Authors
-                        </div>
-                    </div>
-
-            
-                 <div class="col-md-3 col-sm-3 rscol-xs-6">
-                      <div class="alert alert-info back-widget-set text-center">
-                            <i class="fa fa-file-archive-o fa-5x"></i>
-<% 
-MongoCollection<Document> collection6 = db.getCollection("categories");
-
-long Count6 = collection6.countDocuments();
-
-%>
-
-                            <h3> <%=Count6%></h3>
-                           Listed Categories
-                        </div>
-                    </div>
-             
-
-        </div>             
-
+ 
             
     </div>
     </div>

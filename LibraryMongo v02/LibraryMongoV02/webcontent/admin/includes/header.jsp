@@ -27,6 +27,9 @@
                         <ul id="menu-top" class="nav navbar-nav navbar-right">
                             <li><a href="dashboard.jsp" class="menu-top-active">DASHBOARD</a></li>
                            
+                           <li><a href="loanHistory.jsp">Loan History</a></li>
+                    		 <li><a href="fines.jsp">Fines</a></li>
+                           
                             <li>
                                 <a href="#" class="dropdown-toggle" id="ddlmenuItem" data-toggle="dropdown"> Categories <i class="fa fa-angle-down"></i></a>
                                 <ul class="dropdown-menu" role="menu" aria-labelledby="ddlmenuItem">
@@ -49,8 +52,7 @@
                                 </ul>
                             </li>
 
-                    		<li><a href="loanHistory.jsp">Loan History</a></li>
-                    		 <li><a href="fines.jsp">Fines</a></li>
+                    		
  							 <li><a href="change-password.jsp">Change Password</a></li>
                         </ul>
                     </div>
