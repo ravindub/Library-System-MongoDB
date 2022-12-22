@@ -1,8 +1,12 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import="org.bson.*,java.util.Date,java.text.SimpleDateFormat"
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+ 	import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();	
        
 %>
 
@@ -15,10 +19,8 @@ if(session.getAttribute("alogin")==null)
 else
 {
 	
-	
-	String sql = "SELECT * from tblstudents";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	rs=ps.executeQuery();
+	MongoCollection<Document> collection = db.getCollection("students");
+	 MongoCursor<Document> cursor = collection.find().iterator();
 %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -67,18 +69,17 @@ else
 <label>Select Student<span style="color:red;">*</span></label>
 <select class="form-control" name="stdname"  required>
 <%
-if(rs!=null)
+
+while(cursor.hasNext())
 {
-while(rs.next())
-{
-String sname = rs.getString("FullName");
-String sid = rs.getString("StudentId"); 
+	Document myDoc = cursor.next();
+	
+	String sname = myDoc.get("fullName",String.class);
+	String sid = myDoc.get("studentID",String.class); 
 %>
 <option value="<%=sid %>"><%=sname %></option>
 <%
-}
-
-}
+}cursor.close();
 %>
 </select>
 </div>
@@ -108,18 +109,23 @@ String sid = rs.getString("StudentId");
     	String from=request.getParameter("from");
     	String to=request.getParameter("to");
     	
+    	SimpleDateFormat sdt = new SimpleDateFormat("yyyy-MM-dd");
+        
+    	
+    	MongoCollection<Document> collectionBooks = db.getCollection("issuedbooks");
+    	
+    	
 
 
     	if(from != null && to != null){
-    		String sql2 = "SELECT tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.fine,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid from  tblissuedbookdetails join tblstudents on tblstudents.StudentId=tblissuedbookdetails.StudentId join tblbooks on tblbooks.id=tblissuedbookdetails.BookId where tblissuedbookdetails.StudentId=?  and (tblissuedbookdetails.IssuesDate between ? and ?) order by tblissuedbookdetails.id desc";
-    		ps=conn.prepareStatement(sql2,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-    		ps.setString(1,sid);
-    		ps.setDate(2,java.sql.Date.valueOf(from));
-    		ps.setDate(3,java.sql.Date.valueOf(to));
-    		rs=ps.executeQuery();
-    	
+    		
+    		Date fromDate = sdt.parse(from);
+            Date toDate = sdt.parse(to);
         
-        
+            
+            FindIterable<Document> findIterable = collectionBooks.find(and(gte("issuedDate", fromDate), lte("issuedDate", toDate),eq("studentID.studentID",sid)));
+        	
+        	MongoCursor<Document> cursorbook = findIterable.iterator();
      %>
             <div class="row">
                 <div class="col-md-12">
@@ -150,37 +156,45 @@ String sid = rs.getString("StudentId");
 		
 		
 	int cnt=1;
-while(rs.next())
+while(cursorbook.hasNext())
 {
-
+	Document myBooks = cursorbook.next();
+	Document myDoc2 = myBooks.get("bookID", Document.class);
+	
+	Date date = myBooks.getDate("issuedDate");
+	Date returndate = myBooks.getDate("returnedDate");
+	SimpleDateFormat DateFor = new SimpleDateFormat("yyyy-MM-dd");
+	String issDate= DateFor.format(date);
+	
+	
  %>                                      
                                         <tr class="odd gradeX">
                                             <td class="center"><%=cnt%></td>
                                            
-                                            <td class="center"><%=rs.getString("BookName")%></td>
-                                            <td class="center"><%=rs.getString("ISBNNumber")%></td>
-                                            <td class="center"><%=rs.getDate("IssuesDate")%></td>
-                                            <td class="center"><% if(rs.getDate("ReturnDate")==null)
+                                            <td class="center"><%=myDoc2.get("bookname")%></td>
+                                            <td class="center"><%=myDoc2.get("isbn")%></td>
+                                            <td class="center"><%=issDate%></td>
+                                            <td class="center"><% if(myBooks.getDate("returnedDate")==null)
                                             {
                                                 out.println("Not Returned Yet");
                                             } else {
-
-                                            	out.println(rs.getDate("ReturnDate"));
+                                            	String retDate= DateFor.format(returndate);
+                                            	out.println(retDate);
 						                     }
                                             %></td>
-                                            <td class="center"><% if(rs.getString("fine")==null)
+                                            <td class="center"><% if(myBooks.get("fine")==null)
                                             {
                                                 out.println("N/A");
                                             } else {
 
-                                            	out.println(rs.getString("fine")); 
+                                            	out.println(myBooks.get("fine")); 
 						                     }
                                             %>
 													
                                           
                                             </td>
                                         </tr>
-												 <% cnt=cnt+1;}  %>                                      
+												 <% cnt=cnt+1;} cursorbook.close(); %>                                      
                                     </tbody>
                                 </table>
                             </div>
@@ -190,7 +204,7 @@ while(rs.next())
                     <!--End Advanced Tables -->
                 </div>
             </div>
-<%  } ps.close(); %>
+<%  }  %>
 
             
     </div>

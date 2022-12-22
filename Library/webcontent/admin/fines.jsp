@@ -1,9 +1,13 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import="org.bson.*,java.util.Date,java.text.SimpleDateFormat"
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId,com.mongodb.client.model.Aggregates,com.mongodb.client.model.Accumulators,java.util.Arrays"
+ 	import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
-        
+	MongoDatabase db = dbConnect.getDatabase();	
+	int sum = 0 ;
        
 %>
 
@@ -17,9 +21,8 @@ else
 {
 	
 	
-	String sql = "SELECT * from tblstudents";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	rs=ps.executeQuery();
+	MongoCollection<Document> collection = db.getCollection("students");
+	 MongoCursor<Document> cursor = collection.find().iterator();
 %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -68,18 +71,19 @@ else
 <label>Select Student<span style="color:red;">*</span></label>
 <select class="form-control" name="stdname"  required>
 <%
-if(rs!=null)
+
+while(cursor.hasNext())
 {
-while(rs.next())
-{
-String sname = rs.getString("FullName");
-String sid = rs.getString("StudentId"); 
+	Document myDoc = cursor.next();
+	
+	String sname = myDoc.get("fullName",String.class);
+	String sid = myDoc.get("studentID",String.class); 
 %>
 <option value="<%=sid %>"><%=sname %></option>
 <%
 }
 
-}
+
 %>
 </select>
 </div>
@@ -109,15 +113,34 @@ String sid = rs.getString("StudentId");
     	String from=request.getParameter("from");
     	String to=request.getParameter("to");
     	
-
+		SimpleDateFormat sdt = new SimpleDateFormat("yyyy-MM-dd");
+        
+    	MongoCollection<Document> collectionBooks = db.getCollection("issuedbooks");
 
     	if(from != null && to != null){
-    		String sql2 = "SELECT sum(tblissuedbookdetails.fine) as fine,tblissuedbookdetails.StudentID,tblstudents.FullName,tblstudents.EmailId,tblstudents.MobileNumber from  tblissuedbookdetails join tblstudents on tblstudents.StudentId=tblissuedbookdetails.StudentId where tblstudents.StudentId=?  and (tblissuedbookdetails.IssuesDate between ? and ?) group by tblissuedbookdetails.StudentID,tblstudents.FullName,tblstudents.EmailId,tblstudents.MobileNumber";
-    		ps=conn.prepareStatement(sql2,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-    		ps.setString(1,sid);
-    		ps.setDate(2,java.sql.Date.valueOf(from));
-    		ps.setDate(3,java.sql.Date.valueOf(to));
-    		rs=ps.executeQuery();
+    		Date fromDate = sdt.parse(from);
+            Date toDate = sdt.parse(to);
+        	
+            
+            FindIterable<Document> findIterable = collectionBooks.find(and(gte("issuedDate", fromDate), lte("issuedDate", toDate),eq("studentID.studentID",sid)));
+        	
+            FindIterable<Document> sumiter = collectionBooks.find(and(gte("issuedDate", fromDate), lte("issuedDate", toDate),eq("studentID.studentID",sid)));
+       
+            
+            MongoCursor<Document> fineSum = sumiter.iterator();
+            while(fineSum.hasNext()){
+            	Document d = fineSum.next();
+            	if(d.get("fine") != null){
+            		sum = (int)d.get("fine") + sum;
+            		
+            	
+            	}
+            } fineSum.close();
+           
+			
+            
+            
+        	MongoCursor<Document> cursorbook = findIterable.iterator();
     	
         
         
@@ -150,20 +173,22 @@ String sid = rs.getString("StudentId");
 		
 	
 
-if(rs.next())
-{
-
+if(cursorbook.hasNext())
+{	
+	Document myBooks = cursorbook.next();
+	Document myDoc2 = myBooks.get("studentID", Document.class);
+	
  %>                                      
                                         <tr class="odd gradeX">
                                             
-                                            <td class="center"><%=rs.getString("StudentId")%></td>
-                                            <td class="center"><%=rs.getString("FullName")%></td>
-                                            <td class="center"><%=rs.getString("EmailId")%></td>
-                                            <td class="center"><%=rs.getString("MobileNumber")%></td>
-                                            <td class="center"><%=rs.getString("fine")%></td>
+                                            <td class="center"><%=myDoc2.get("studentID")%></td>
+                                            <td class="center"><%=myDoc2.get("fullName")%></td>
+                                            <td class="center"><%=myDoc2.get("email")%></td>
+                                            <td class="center"><%=myDoc2.get("mobile")%></td>
+                                            <td class="center"><%=sum%></td>
                                            
                                         </tr>
-												 <% }  %>                                      
+												 <% } cursorbook.close(); %>                                      
                                     </tbody>
                                 </table>
                             </div>
@@ -173,7 +198,7 @@ if(rs.next())
                     <!--End Advanced Tables -->
                 </div>
             </div>
-<%  } ps.close(); %>
+<%  }  %>
 
             
     </div>

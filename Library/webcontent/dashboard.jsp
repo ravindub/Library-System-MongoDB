@@ -1,7 +1,13 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import="org.bson.*,java.util.Date,java.text.SimpleDateFormat"
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+	import="com.library.db.dbConnect"%>
 <%
 	
-   // Connection conn = dbConnect.getConnection();
+	MongoDatabase db = dbConnect.getDatabase();
 %>
 <%
 
@@ -52,21 +58,16 @@ else{
                  <div class="col-md-3 col-sm-3 col-xs-6">
                       <div class="alert alert-info back-widget-set text-center">
                             <i class="fa fa-bars fa-5x"></i>
-<%/*
-String sid=(String)session.getAttribute("stdid");
-String sql1 ="SELECT id from tblissuedbookdetails where StudentID=?";
-ps=conn.prepareStatement(sql1,ResultSet.TYPE_SCROLL_SENSITIVE,  
-                     ResultSet.CONCUR_UPDATABLE);
-ps.setString(1,sid);
-rs=ps.executeQuery();
+<%
+	String sid=(String)session.getAttribute("stdid");
+	MongoCollection<Document> collection = db.getCollection("issuedbooks");
+	
+	long Count = collection.countDocuments(eq("studentID.studentID", sid));
+	
 
-rs.last();
-int issuedbooks=rs.getRow();
-
-ps.close(); */
 %>
 
-                            <h3> <%//=issuedbooks%></h3>
+                            <h3> <%=Count%></h3>
                             Books Borrowed
                         </div>
                     </div>

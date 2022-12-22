@@ -1,8 +1,12 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+import="com.mongodb.client.*,org.bson.Document" 
+	import="org.bson.*,java.util.Date,java.text.SimpleDateFormat"
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+ import="com.library.db.dbConnect"%>
 <%
-	/* PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null; */
+	MongoDatabase db = dbConnect.getDatabase();
         
 %>
 
@@ -55,17 +59,14 @@ else {
                       <div class="alert alert-success back-widget-set text-center">
                             <i class="fa fa-book fa-5x"></i>
 <%
-/* String sql ="SELECT id from tblbooks ";
-ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-rs=ps.executeQuery();
 
+	MongoCollection<Document> collection = db.getCollection("books");
 
-rs.last();
-int listdbooks=rs.getRow(); */
+	long Count = collection.countDocuments();
 %>
 
 
-                            <h3></h3>
+                            <h3><%=Count%></h3>
                       Books Listed
                         </div>
                     </div>
@@ -75,15 +76,12 @@ int listdbooks=rs.getRow(); */
                       <div class="alert alert-info back-widget-set text-center">
                             <i class="fa fa-bars fa-5x"></i>
 <% 
-/* String sql1 ="SELECT id from tblissuedbookdetails ";
-ps=conn.prepareStatement(sql1,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-rs=ps.executeQuery();
+MongoCollection<Document> collection2 = db.getCollection("issuedbooks");
 
-rs.last();
-int issuedbooks=rs.getRow(); */
+long Count2 = collection2.countDocuments();
 %>
 
-                            <h3> </h3>
+                            <h3><%=Count2%> </h3>
                            Books Issued
                         </div>
                     </div>
@@ -92,17 +90,13 @@ int issuedbooks=rs.getRow(); */
                       <div class="alert alert-warning back-widget-set text-center">
                             <i class="fa fa-recycle fa-5x"></i>
 <%
-/* int status=1;
-String sql2 ="SELECT id from tblissuedbookdetails where RetrunStatus=?";
-ps=conn.prepareStatement(sql2,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-ps.setInt(1,status);
-rs=ps.executeQuery();
 
-rs.last();
-int returnedbooks=rs.getRow(); */
+MongoCollection<Document> collection3 = db.getCollection("issuedbooks");
+
+long Count3 = collection3.countDocuments(eq("returnedDate", null));
 %>
 
-                            <h3></h3>
+                            <h3><%=Count2-Count3%></h3>
                           Books Returned
                         </div>
                     </div>
@@ -110,14 +104,11 @@ int returnedbooks=rs.getRow(); */
                       <div class="alert alert-danger back-widget-set text-center">
                             <i class="fa fa-users fa-5x"></i>
 <% 
-/* String sql3 ="SELECT id from tblstudents ";
-ps=conn.prepareStatement(sql3,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-rs=ps.executeQuery();
+MongoCollection<Document> collection4 = db.getCollection("students");
 
-rs.last();
-int regstds=rs.getRow(); */
+long Count4 = collection4.countDocuments();
 %>
-                            <h3></h3>
+                            <h3><%=Count4%></h3>
                            Registered Students
                         </div>
                     </div>
@@ -132,16 +123,13 @@ int regstds=rs.getRow(); */
                       <div class="alert alert-success back-widget-set text-center">
                             <i class="fa fa-user fa-5x"></i>
 <% 
-/* String sql4 ="SELECT id from tblauthors ";
-ps=conn.prepareStatement(sql4,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-rs=ps.executeQuery();
+MongoCollection<Document> collection5 = db.getCollection("authors");
 
-rs.last();
-int listdathrs=rs.getRow(); */
+long Count5 = collection5.countDocuments();
 %>
 
 
-                            <h3></h3>
+                            <h3><%=Count5%></h3>
                       Listed Authors
                         </div>
                     </div>
@@ -151,18 +139,13 @@ int listdathrs=rs.getRow(); */
                       <div class="alert alert-info back-widget-set text-center">
                             <i class="fa fa-file-archive-o fa-5x"></i>
 <% 
-/* String sql5 ="SELECT id from tblcategory ";
-ps=conn.prepareStatement(sql5,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-rs=ps.executeQuery();
+MongoCollection<Document> collection6 = db.getCollection("categories");
 
-rs.last();
-int listdcats=rs.getRow();
-
-ps.close(); */
+long Count6 = collection6.countDocuments();
 
 %>
 
-                            <h3> </h3>
+                            <h3> <%=Count6%></h3>
                            Listed Categories
                         </div>
                     </div>
