@@ -1,4 +1,10 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date,java.time.LocalDate" import="com.library.db.dbConnect"%>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date,java.time.LocalDate"
+	import="com.mongodb.client.*,org.bson.Document" 
+	import="org.bson.*"
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+ 	import="com.library.db.dbConnect"%>
 <%!
 	public static String getDate()
     
@@ -13,9 +19,7 @@
 	}
 %>
 <%
-	PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();	
        
 %>
 
@@ -27,24 +31,26 @@ if(session.getAttribute("login")==null)
 }
 else
 { 
-	LocalDate date = LocalDate.now();
+	String rid = request.getParameter("rid");
+	LocalDate retdate = LocalDate.now();
 	String ret=request.getParameter("return");
+	
+	MongoCollection<Document> collectionBook = db.getCollection("issuedbooks");
+	
+	
 	if(ret!=null)
 	{
-		int rid=Integer.parseInt(request.getParameter("rid"));
+		
 		int fine=Integer.parseInt(request.getParameter("fine"));
-		int rstatus=1;
-		String sql="update tblissuedbookdetails set fine=?,ReturnDate=?,RetrunStatus=? where id=?";
-		ps=conn.prepareStatement(sql);
-		ps.setInt(1,fine);
-		ps.setDate(2,java.sql.Date.valueOf(date));
-		ps.setInt(3,rstatus);
-		ps.setInt(4,rid);
-		int i=ps.executeUpdate();
+		
+		collectionBook.updateOne(
+                eq("_id", new ObjectId(rid)),
+                combine(set("fine", fine), 
+                		set("returnedDate", retdate) ));
 		
 		session.setAttribute("msg","Book Returned successfully");
 		response.sendRedirect("issued-books.jsp");
-		ps.close();
+		
 
 	}
 %>
@@ -97,15 +103,26 @@ Issued Book Details
 <div class="panel-body">
 <form role="form" method="post">
 <%
-	int rid=Integer.parseInt(request.getParameter("rid"));
-	String sql = "SELECT tblstudents.FullName,tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid,tblissuedbookdetails.fine,tblissuedbookdetails.RetrunStatus from  tblissuedbookdetails join tblstudents on tblstudents.StudentId=tblissuedbookdetails.StudentId join tblbooks on tblbooks.id=tblissuedbookdetails.BookId where tblissuedbookdetails.id=?";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	ps.setInt(1,rid);
-	rs=ps.executeQuery();
+	String sid=(String)session.getAttribute("stdid");
+	
+	FindIterable<Document> findIterable = collectionBook.find(eq("_id",new ObjectId(rid)));
 
+	MongoCursor<Document> cursor = findIterable.iterator();
+	
 	int cnt=1;
-	while(rs.next())
+	while(cursor.hasNext())
 	{
+		
+		Document myDoc = cursor.next();
+		Document myDoc2 = myDoc.get("bookID", Document.class);
+		Document myDoc3 = myDoc.get("studentID", Document.class);
+		//System.out.println(myDoc3);
+		
+		Date date = myDoc.getDate("issuedDate");
+		Date returndate = myDoc.getDate("returnedDate");
+		SimpleDateFormat DateFor = new SimpleDateFormat("yyyy-MM-dd");
+		String stringDate= DateFor.format(date);
+		
 %>                                      
                    
 
@@ -113,35 +130,35 @@ Issued Book Details
 
 <div class="form-group">
 <label>Student Name :</label>
-<%=rs.getString("FullName")%>
+<%=myDoc3.get("fullName")%>
 </div>
 
 <div class="form-group">
 <label>Book Name :</label>
-<%=rs.getString("BookName")%>
+<%=myDoc2.get("bookname")%>
 </div>
 
 
 <div class="form-group">
 <label>ISBN :</label>
-<%=rs.getString("ISBNNumber")%>
+<%=myDoc2.get("isbn")%>
 </div>
 
 <div class="form-group">
 <label>Book Issued Date :</label>
-<%=rs.getDate("IssuesDate")%>
+<%=stringDate%>
 </div>
 
 
 <div class="form-group">
 <label>Book Returned Date :</label>
-<% if(rs.getDate("ReturnDate")==null)
+<% if(myDoc.get("returnedDate")==null)
                                             {
                                                 out.println("Not Return Yet");
                                             } else {
 
-
-                                            out.println(rs.getDate("ReturnDate"));
+                                            String stringRetDate= DateFor.format(returndate);
+                                            out.println(stringRetDate);
 }
                                             %>
 </div>
@@ -149,23 +166,23 @@ Issued Book Details
 <div class="form-group">
 <label>Fine (in LKR) :</label>
 <% 
-if(rs.getString("fine")==null)
+if(myDoc.get("fine")==null)
 {%>
 <input class="form-control" type="number" name="fine" id="fine"  required />
 
 <% }else {
-	out.println(rs.getString("fine"));
+	out.println(myDoc.get("fine"));
 }
 %>
 </div>
- <% if(rs.getInt("RetrunStatus")==0){%>
+ <% if(myDoc.get("returnedDate")== null){%>
 
 <button type="submit" name="return" id="submit" class="btn btn-info">Return Book </button>
 </form>
 
 <% }
  }
-	ps.close();
+	cursor.close();
 	
 %>
 </div>

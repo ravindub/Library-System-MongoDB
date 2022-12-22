@@ -1,11 +1,14 @@
-<%@page import="java.sql.*,java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date,java.time.LocalDate" import="com.library.db.dbConnect" %>
+<%@page import="java.text.DateFormat,java.text.SimpleDateFormat,java.util.Date,java.time.LocalDate"
+	import="com.mongodb.client.*,org.bson.Document" 
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+	 import="com.library.db.dbConnect" %>
 <%!
 	
 %>
 <%
-		PreparedStatement ps;
-		Connection conn = dbConnect.getConnection();
-        ResultSet rs= null;
+	MongoDatabase db = dbConnect.getDatabase();	
         
        
         
@@ -26,44 +29,31 @@ else
 	if(issue!=null)
 	{
 		String bookName=request.getParameter("bookname");
+		MongoCollection<Document> collectionBooks = db.getCollection("books");
+		Document book = collectionBooks.find(eq("_id",new ObjectId(bookName))).first();
 		
-		String sql1 ="SELECT id FROM tblbooks WHERE (BookName=?)";
-		ps=conn.prepareStatement(sql1,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-		ps.setString(1,bookName);
-		ResultSet rs1=ps.executeQuery();
+		MongoCollection<Document> collectionStd = db.getCollection("students");
+		Document student = collectionStd.find(eq("studentID",studentid )).first();
 		
-		
-		if(rs1.next())
+		if(studentid != null)
 		{
 			
-		
-		
-			String sql="INSERT INTO  tblissuedbookdetails(StudentID,BookId,IssuesDate) VALUES(?,?,?)";
-			ps=conn.prepareStatement(sql);
-			ps.setString(1,studentid);
-			ps.setInt(2,rs1.getInt("id"));
-			ps.setDate(3,java.sql.Date.valueOf(date));
-			int i=ps.executeUpdate();
-		
-		
-			if(i>0)
-			{
-				session.setAttribute("msg","Book issued successfully");
-				response.sendRedirect("issued-books.jsp");
-			}
-			else 
-			{
-				session.setAttribute("error","Something went wrong. Please try again");
-				response.sendRedirect("issued-books.jsp");
-			}
+			MongoCollection<Document> collectionbk = db.getCollection("issuedbooks");
+			
+			Document doc = new Document("bookID",book)
+		            .append("studentID", student)
+		            .append("issuedDate",date);
+			
+			collectionbk.insertOne(doc);
+			
+			session.setAttribute("msg","Book issued successfully");
+			response.sendRedirect("issued-books.jsp");
+			
+			
 		}	
-		ps.close();
+		
 	}
-else{
-	String sql = "SELECT * from tblbooks";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	rs=ps.executeQuery();
-}
+
 %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -118,17 +108,20 @@ Borrow a New Book
 <label>Select a Book<span style="color:red;">*</span></label>
 <select class="form-control" name="bookname"  required>
 <%
-if(rs!=null)
-{
-while(rs.next())
-{
-String bname = rs.getString("BookName"); 
-%>
-<option value="<%=bname %>"><%=bname %></option>
-<%
-}
 
-}
+MongoCollection<Document> collectionBook = db.getCollection("books");
+MongoCursor<Document> cursor = collectionBook.find().iterator();
+
+
+while(cursor.hasNext())
+{
+	Document myDoc = cursor.next();
+%>
+<option value="<%=myDoc.get("_id") %>"><%=myDoc.get("bookname") %></option>
+<%
+}cursor.close();
+
+
 %>
 </select>
 </div>

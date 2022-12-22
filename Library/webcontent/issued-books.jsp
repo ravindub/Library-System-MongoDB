@@ -1,8 +1,12 @@
-<%@page import="java.sql.*" import="com.library.db.dbConnect"%>
+<%@page 
+	import="com.mongodb.client.*,org.bson.Document" 
+	import="org.bson.*,java.util.Date,java.text.SimpleDateFormat"
+	import= "static com.mongodb.client.model.Filters.*"
+	import= "static com.mongodb.client.model.Updates.*"
+	import= "org.bson.types.ObjectId"
+	import="com.library.db.dbConnect"%>
 <%
-	PreparedStatement ps;
-        ResultSet rs= null;
-        Connection conn = dbConnect.getConnection();
+	MongoDatabase db = dbConnect.getDatabase();	
         
 %>
 
@@ -74,21 +78,31 @@ else
                                     <tbody>
 <%
 	String sid=(String)session.getAttribute("stdid");
-	String sql="SELECT tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid,tblissuedbookdetails.fine from  tblissuedbookdetails join tblstudents on tblstudents.StudentId=tblissuedbookdetails.StudentId join tblbooks on tblbooks.id=tblissuedbookdetails.BookId where tblstudents.StudentId=? order by tblissuedbookdetails.id desc";
-	ps=conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	ps.setString(1,sid);
-	rs=ps.executeQuery();
+	MongoCollection<Document> collectionBook = db.getCollection("issuedbooks");
+	FindIterable<Document> findIterable = collectionBook.find(eq("studentID.studentID", sid));
+	
+	
+	MongoCursor<Document> cursor = findIterable.iterator();
+	
 	
 	int cnt=1;
-	while(rs.next())
+	while(cursor.hasNext())
 	{
+		Document myDoc = cursor.next();
+		Document myDoc2 = myDoc.get("bookID", Document.class);
+		//System.out.println(myDoc2);
+		
+		Date date = myDoc.getDate("issuedDate");
+		Date returndate = myDoc.getDate("returnedDate");
+		SimpleDateFormat DateFor = new SimpleDateFormat("yyyy-MM-dd");
+		String stringDate= DateFor.format(date);
 %>                                      
 		<tr class="odd gradeX">
 		<td class="center"><%=cnt%></td>
-		<td class="center"><%=rs.getString("BookName")%></td>
-		<td class="center"><%=rs.getString("ISBNNumber")%></td>
-		<td class="center"><%=rs.getDate("IssuesDate")%></td>
-		<td class="center"><%	if(rs.getDate("ReturnDate")==null)
+		<td class="center"><%=myDoc2.get("bookname")%></td>
+		<td class="center"><%=myDoc2.get("isbn")%></td>
+		<td class="center"><%=stringDate%></td>
+		<td class="center"><%	if(myDoc.get("returnedDate")==null)
 					{
 				   %>
                                             <span style="color:red">
@@ -99,15 +113,16 @@ else
 				    	{ 
 				    %>
 
-                                            <%=rs.getDate("ReturnDate")%>
+                                            <%String stringRetDate= DateFor.format(returndate);
+                                            out.println(stringRetDate);%>
 
                                     <%  } 
 				
                                     %></td>
-		<td class="center"><%=rs.getString("fine")%></td>
+		<td class="center"><%=myDoc.get("fine")%></td>
 		 <td class="center">
 
-          <a href="returnBooks.jsp?rid=<%=rs.getInt("rid")%>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button> 
+          <a href="returnBooks.jsp?rid=<%=myDoc.get("_id")%>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button> </a>
                                          
         </td>
                                          
@@ -115,7 +130,7 @@ else
 <% 	cnt=cnt+1;
 	} 
 	
-	ps.close();
+	cursor.close();
 %>                                      
                                     </tbody>
                                 </table>
