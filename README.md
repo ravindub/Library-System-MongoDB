@@ -35,4 +35,4 @@ A comprehensive Library Management System built using JSP, Servlet, and backed b
 
 ## Oracle Version:
 
-- Here's the link to the Oracle version fo the same project. https://github.com/ravindub/Library-System-MongoDB
+- Here's the link to the Oracle version of the same project. https://github.com/ravindub/Library-System-MongoDB
